@@ -8,69 +8,105 @@ Python application for two NYC taxi prediction tasks:
 The repository includes data processing, XGBoost/LightGBM training, MLflow
 tracking, FastAPI serving, recursive batch forecasts, SHAP explanations,
 subgroup evaluation, drift detection, a Streamlit dashboard, and optional AWS
-infrastructure templates. It contains no datasets or trained model bundles.
+infrastructure templates. 
 
-## Start Locally
 
-For the preinstalled Windows course image, follow the
-[AWS account and image-access guide](docs/STUDENT_AWS_IMAGE_ACCESS.md) instead of
-recreating the environment with the local-install commands below.
+## Quickstart: Clean Reproduction (Golden Path)
 
-Use Python 3.11. From the repository root on Windows PowerShell:
+To clone and reproduce the entire machine learning pipeline end-to-end in a fresh directory (Ubuntu / WSL 2):
 
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m pytest
+### 1. Clone & Environment Setup
+
+```bash
+# Clone repository and enter directory
+git clone [https://github.com/arunredz/capstone-bits-ai.git](https://github.com/arunredz/capstone-bits-ai.git)
+cd capstone-bits-ai
+
+# Create and activate Python 3.11 virtual environment
+python3.11 -m venv .venv
+source .venv/bin/activate
+
+# Upgrade pip and install pinned runtime dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
 ```
 
-Tests use synthetic data and do not require downloads, models or AWS access.
-Follow [setup](docs/SETUP.md) to download data, train registered models, and
-start the API and dashboard. Do not expect working predictions immediately
-after cloning: serving requires both registered models and saved demand history.
+### 2. Run Quality Gates & Unit Tests
 
-## Documentation
+```bash
+# Verify code formatting and linting
+python -m ruff check .
 
-- [Request and launch the Windows course image](docs/STUDENT_AWS_IMAGE_ACCESS.md)
-- [Deploy the API to AWS with CodeBuild](docs/STUDENT_AWS_DEPLOYMENT_WALKTHROUGH.md)
-- [Local setup and commands](docs/SETUP.md)
-- [API request examples](docs/API_EXAMPLES.md)
-- [System architecture](docs/ARCHITECTURE.md)
-- [Data scope and model limitations](docs/DATA_STATEMENT.md)
-- [Optional AWS infrastructure](infra/terraform/README.md)
-- [Recording companion and learner activity map](docs/RECORDING_COMPANION.md)
-- [Recorded architecture walkthrough](docs/PROJECT_ARCHITECTURE.md)
-- [Historical business report](docs/BUSINESS_REPORT.md)
-- [Cloud cost boundaries](docs/COST_OPTIMIZATION.md)
+# Run test suite with statement coverage (120/120 tests, >75% coverage threshold)
+python -m pytest --cov=src --cov-report=term-missing
 
-The companion links all L2-L12 learner labs; L1 uses setup and tests. Videos are
-provided separately. Lab files, reviewed diagrams, and the exploration notebook
-retain the paths shown in the recordings. The notebook has no saved outputs.
-Datasets, trained models, and evidence reports must be generated locally; AWS
-activities require your own authorized configuration or the stated local fallback.
+```
 
-## Layout
+### 3. Data Engineering Pipeline & Temporal Splitting
 
-| Path | Responsibility |
-| --- | --- |
-| `src/data/`, `src/features/` | Download, clean, aggregate, engineer features, and split by time |
-| `src/models/` | Tune, train, evaluate, explain, and register models |
-| `src/serving/`, `clients/python/` | API contracts, inference, batch forecasting, and HTTP client |
-| `src/monitoring/`, `src/responsible/` | Drift, performance comparisons, SHAP, and subgroup metrics |
-| `scripts/` | Technical command entrypoints |
-| `dashboard/` | Streamlit views calling the API and reading local reports |
-| `tests/` | Offline unit and integration checks |
-| `notebooks/`, `docs/` | Data exploration, learner activities, and technical references |
-| `docker/`, `infra/terraform/`, `retraining/` | Optional packaging and cloud operation |
+```bash
+# Ingests NYC TLC Yellow Taxi records (Jan 2024), validates schema, filters corrupt rows,
+# densifies the hourly demand grid, and creates 80/10/10 chronological splits
+python -m scripts.run_pipeline
 
-## Operational Boundaries
+```
 
-Docker, Terraform and AWS are optional for local operation. The cloud templates
-are not connected to any account, remote repository or existing deployment.
-They can create billable resources if you explicitly deploy them with credentials.
-No GitHub Actions workflows or automatic release hooks are configured here.
+(Note: Omit `--skip-download` on a fresh machine so it fetches the raw monthly Parquet and zone lookup files into `data/raw/`. If you already have the raw files cached locally, add `--skip-download`).
 
-Historical evaluation does not establish current production quality. The default
-forecast follows the latest stored history, not the current clock. Model errors,
-duration estimation, drift and subgroup disparities require review before using
-predictions to make operational or financial decisions.
+### 4. Hyperparameter Tuning & MLflow Model Registry
+
+```bash
+# Runs Optuna hyperparameter sweeps (10 trials each) across XGBoost and LightGBM
+# Logs runs, parameters, metrics, and registers champion models to sqlite:///mlflow.db
+python -m scripts.train_models --problem both --n-trials 10
+
+```
+
+### 5. Responsible AI, Subgroup Fairness & Explainability
+
+```bash
+# Audits subgroup disparities across Boroughs, Airports, and Time of Day
+# Generates global SHAP summary beeswarm plots and publishes Model Cards to docs/model_cards/
+python -m scripts.responsible.run_analysis
+
+```
+
+### 6. Model Serving & 24-Hour Batch Forecast
+
+```bash
+# Start FastAPI backend server in the background (Port 8000)
+uvicorn src.serving.api:app --host 0.0.0.0 --port 8000 &
+
+# Quick smoke test for real-time fare inference (returns HTTP 200 with ~$70 quote)
+curl -X POST "[http://127.0.0.1:8000/predict/fare](http://127.0.0.1:8000/predict/fare)" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "pickup_datetime": "2024-01-15T18:30:00",
+       "pu_location_id": 132,
+       "do_location_id": 230,
+       "trip_distance": 17.2,
+       "passenger_count": 1
+     }'
+
+# Execute 24-hour recursive multi-step demand batch forecast across all 253 zones (writes 6,072 rows to predictions.db)
+python -m scripts.batch_forecast
+
+```
+
+### 7. Feature Drift Monitoring
+
+```bash
+# Calculates Population Stability Index (PSI) and Kolmogorov-Smirnov statistics against baseline
+python -m scripts.monitoring.demo_drift_report --problem fare --mode drift
+
+```
+
+### 8. Launch Operations Dashboard
+
+```bash
+# Start the Streamlit UI (opens on http://localhost:8501)
+streamlit run dashboard/app.py
+
+```
+
