@@ -1,5 +1,7 @@
 # Taxi Forecasting
 
+[![CI Quality Gate](https://github.com/arunredz/capstone-bits-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/arunredz/capstone-bits-ai/actions/workflows/ci.yml)
+
 Python application for two NYC taxi prediction tasks:
 
 - **Demand:** pickup count for one pickup zone and hour.
@@ -57,9 +59,9 @@ python -m scripts.run_pipeline
 ### 4. Hyperparameter Tuning & MLflow Model Registry
 
 ```bash
-# Runs Optuna hyperparameter sweeps (10 trials each) across XGBoost and LightGBM
+# Runs Optuna hyperparameter sweeps (25 trials each) across XGBoost and LightGBM
 # Logs runs, parameters, metrics, and registers champion models to sqlite:///mlflow.db
-python -m scripts.train_models --problem both --n-trials 10
+python -m scripts.train_models --problem both --n-trials 25
 
 ```
 
@@ -105,6 +107,9 @@ python -m scripts.monitoring.demo_drift_report --problem fare --mode drift
 ### 8. Launch Operations Dashboard
 
 ```bash
+# Install dashboard dependencies (Streamlit & Plotly)
+pip install -r requirements-dashboard.txt
+
 # Start the Streamlit UI (opens on http://localhost:8501)
 streamlit run dashboard/app.py
 

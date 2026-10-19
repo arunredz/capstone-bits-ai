@@ -141,25 +141,32 @@ For local Python, press `Ctrl+C` in the Uvicorn terminal.
 ### Runtime route and evidence
 
 ```text
-
+Route B: Local Python Uvicorn.
+- Service launched via: uvicorn src.serving.api:app --host 0.0.0.0 --port 8000
+- Health verification: GET http://127.0.0.1:8000/health returned HTTP 200 with application status "healthy" and loaded registered model metadata.
+- Interactive API documentation verified via Swagger UI on http://127.0.0.1:8000/docs.
 ```
 
 ### Valid response finding
 
 ```text
-
+- Real-Time Fare Inference:
+  POST /predict/fare with payload {"pickup_datetime": "2024-01-15T18:30:00", "pu_location_id": 132, "do_location_id": 230, "trip_distance": 17.2, "passenger_count": 1}
+  returned HTTP 200 with predicted_fare: $70.28, duration_estimated: true. The prediction aligns with the official TLC JFK-Manhattan flat rate ($70.00 base).
+- Batch Demand Forecast:
+  Executed python -m scripts.batch_forecast generating a 24-hour recursive multi-step demand forecast across all 253 NYC zones, successfully persisting 6,072 prediction rows to predictions.db.
 ```
 
 ### Invalid response finding
 
 ```text
-
+POST /predict/fare with an invalid payload (e.g., negative trip_distance or malformed datetime string) returned HTTP 422 Unprocessable Entity with structured Pydantic validation error details. The request was rejected cleanly at the schema validation boundary without raising unhandled server exceptions or terminating the background process.
 ```
 
 ### Packaging explanation and limitation
 
 ```text
-
+The project defines containerized packaging via docker/Dockerfile (multi-stage Python 3.11 build copying model artifacts, portable registry mlflow.container.db, and demand history) and docker/docker-compose.yml (mounting runtime storage and mapping ports 8000 and 5000). While containerization guarantees portable and reproducible local execution, running the service locally does not prove AWS cloud infrastructure, ALB listener routing, IAM roles, or ECS Fargate auto-recovery.
 ```
 
 ## Completion Check

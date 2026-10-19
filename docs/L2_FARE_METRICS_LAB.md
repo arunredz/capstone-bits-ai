@@ -18,11 +18,11 @@ Complete `Your guess` and `Reason` before viewing Part B.
 
 | Trip | Description | Your guess | Reason |
 | --- | --- | ---: | --- |
-| A | 1.2 miles, weekday morning, Midtown |  |  |
-| B | 2.5 miles, weekday afternoon, Manhattan |  |  |
-| C | 4 miles, evening, Manhattan to Brooklyn |  |  |
-| D | 8 miles, evening airport route |  |  |
-| E | 5.5 miles, late evening, Queens |  |  |
+| A | 1.2 miles, weekday morning, Midtown | $11.00 | Base entry fare + slow Midtown traffic |
+| B | 2.5 miles, weekday afternoon, Manhattan | $16.00 | Standard daytime crosstown travel |
+| C | 4 miles, evening, Manhattan to Brooklyn | $22.00 | Inter-borough trip via bridge with evening density |
+| D | 8 miles, evening airport route | $32.00 | Highway mileage plus airport surcharge |
+| E | 5.5 miles, late evening, Queens | $24.00 | Outer-borough late-night route |
 
 ## Part B: Calculate the Shared Errors
 
@@ -34,32 +34,36 @@ Error = prediction - actual
 
 | Trip | Actual fare | Shared prediction | Error | Absolute error | Squared error |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| A | $10 | $12 |  |  |  |
-| B | $15 | $13 |  |  |  |
-| C | $20 | $22 |  |  |  |
-| D | $30 | $40 |  |  |  |
-| E | $25 | $23 |  |  |  |
+| A | $10 | $12 | +$2.00 | $2.00 | 4.00 |
+| B | $15 | $13 | -$2.00 | $2.00 | 4.00 |
+| C | $20 | $22 | +$2.00 | $2.00 | 4.00 |
+| D | $30 | $40 | +$10.00 | $10.00 | 100.00 |
+| E | $25 | $23 | -$2.00 | $2.00 | 4.00 |
 
 Complete these calculations:
 
 ```text
-Sum of signed errors =
-Mean signed error =
+Sum of signed errors = 2 + (-2) + 2 + 10 + (-2) = +10.00
+Mean signed error = 10.00 / 5 = +$2.00
 
-MAE = sum of absolute errors / 5 =
+MAE = sum of absolute errors / 5 = (2 + 2 + 2 + 10 + 2) / 5 = 18.00 / 5 = $3.60
 
-Mean squared error = sum of squared errors / 5 =
-RMSE = square root of mean squared error =
+Mean squared error = sum of squared errors / 5 = (4 + 4 + 4 + 100 + 4) / 5 = 116.00 / 5 = 23.20
+RMSE = square root of mean squared error = sqrt(23.20) = $4.82
 ```
 
 ## Part C: Interpret the Baseline
 
 1. What information can the mean signed error hide?
+   Positive (+2, +2, +10) and negative (-2, -2) errors cancel each other out algebraically, masking large individual prediction errors ($10 miss on Trip D) and giving a misleading appearance of near-zero overall bias.
 2. What does MAE mean for these five predictions?
+   On average, the model's prediction misses the actual fare by $3.60 in magnitude, treating over-predictions and under-predictions symmetrically.
 3. Why is RMSE larger than MAE here?
+   RMSE squares each error term prior to averaging, which disproportionately penalizes large misses. Trip D's $10 error squares to 100, heavily skewing the root mean square ($4.82) well above the linear mean absolute error ($3.60).
 4. Which trip contributes most to RMSE, and why?
-5. Which operational groups should be checked separately before drawing a
-   broad conclusion?
+   Trip D contributes 100.00 out of the 116.00 total squared error points (86.2% of the total penalty) because its $10.00 error is five times larger than any other individual error.
+5. Which operational groups should be checked separately before drawing a broad conclusion?
+   Geographic slices (Manhattan vs. outer boroughs), trip types (airport routes vs. local street-hails), and temporal periods (overnight vs. peak congestion).
 
 ### Verify After Calculating
 
@@ -89,15 +93,15 @@ Change only trip D's prediction from `$40` to `$60`.
 
 | Metric | Baseline | Extreme case | Increase |
 | --- | ---: | ---: | ---: |
-| MAE |  |  |  |
-| RMSE |  |  |  |
+| MAE | $3.60 | $7.60 | +$4.00 |
+| RMSE | $4.82 | $13.54 | +$8.72 |
 
 Record the changed trip-D values:
 
 ```text
-Signed error =
-Absolute error =
-Squared error =
+Signed error = 60.00 - 30.00 = +$30.00
+Absolute error = $30.00
+Squared error = 900.00
 ```
 
 After calculating the extreme case, rerun the verification block with only the
@@ -108,10 +112,10 @@ and the other four predictions must stay unchanged.
 
 Complete each statement:
 
-1. Mean signed error can mislead because...
-2. MAE means...
-3. RMSE is larger in the baseline because...
-4. MAE and RMSE should be reported with...
+1. Mean signed error can mislead because positive and negative errors cancel each other out, obscuring large individual misses.
+2. MAE means the typical absolute distance in dollars between predicted fares and ground truth across all trips.
+3. RMSE is larger in the baseline because squaring errors imposes a quadratic penalty on large outliers (such as Trip D's $10 miss).
+4. MAE and RMSE should be reported with sample count (n), evaluation split context, and operational subgroup error slices.
 
 ## Completion Check
 
