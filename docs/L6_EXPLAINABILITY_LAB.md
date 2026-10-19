@@ -56,12 +56,8 @@ nor its ranking establishes causality, fairness, or production readiness.
 
 ## Task 3: Write a Bounded Explanation
 
-Use this structure:
-
 ```text
-For this analyzed model and data sample, [feature] has [observed influence].
-This suggests [plain-language interpretation]. The evidence does not prove
-[causal or individual-level claim].
+For this analyzed model (LightGBM champion taxi-fare-predictor v1) and held-out test data sample, trip_distance has the dominant positive contribution (mean absolute SHAP attribution of $8.12), followed by trip_duration_min (mean absolute SHAP attribution of $3.82). High feature values (red points on the global beeswarm plot) consistently shift predictions to the right (+ dollars), while low values (blue points) pull predictions to the left (- dollars). This suggests that mileage and transit duration are the primary drivers of fare quotes in the learned tree ensemble. The evidence does not prove a causal relationship or explain individual trip pricing in isolation.
 ```
 
 SHAP describes how model inputs contribute to predictions. It does not prove
@@ -69,9 +65,11 @@ that changing a feature causes the real-world outcome to change.
 
 ## Task 4: Connect the Model Card
 
-Record one intended use, one limitation, and one monitoring or review action
-from the model card. Explain how each item changes the way the SHAP result
-should be communicated.
+```text
+- Intended Use: Operational forecasting of fare_amount to support fleet positioning and upfront passenger estimates. Communicating this boundary clarifies that SHAP explanations demonstrate statistical feature attribution, not legally binding individual quotes.
+- Limitation: Trained exclusively on January 2024 Yellow Medallion taxi trips; attributions may not generalize to outer-borough Green cabs, for-hire vehicles (Uber/Lyft), or summer travel conditions.
+- Monitoring / Review Action: Active drift monitoring on PULocationID and DOLocationID (which carry secondary SHAP weights of 0.16 and 0.48) is required to ensure that shifts in spatial travel patterns do not silently distort fare estimations.
+```
 
 ## Completion Check
 

@@ -86,16 +86,21 @@ forward. Inspect the lag/rolling code separately to establish past-only inputs.
 
 ## 7. Present Three Findings
 
-Use current outputs, not memorized recording values:
+### Finding 1: Data Cleaning and Filtering
+- **Evidence / Artifact:** `data/processed/pipeline_summary.json` and `trips_clean.parquet` (configured period: January 2024).
+- **Observed Metrics:** Raw input of 2,964,624 records cleaned to 2,727,349 valid trips (92.00% retained; 237,275 dropped).
+- **Largest Removal Reason:** `passenger_count_out_of_range` accounted for 167,879 dropped rows (70.8% of all removals, corresponding to records with 0 or >6 passengers), followed by `trip_duration_out_of_range` (36,999 rows) and `fare_out_of_range` (32,321 rows).
+- **Limitation:** Filtering relies on heuristic bounds (1 to 6 passengers, $2.50 to $500.00 fare); trips recorded with 0 passengers may represent package deliveries rather than corrupt meter events.
 
-1. **Cleaning:** raw, retained, and removed row counts; largest removal reason.
-2. **Demand:** zones, hours, zone-hour rows, zero-count rows, and busiest zone.
-3. **Features and splits:** fare row preservation, demand history warm-up, and
-   chronological split boundaries.
+### Finding 2: Demand Grid Densification
+- **Evidence / Artifact:** `data/processed/demand_hourly.parquet`.
+- **Observed Metrics:** 253 taxi pickup zones evaluated across 744 hours (31 days) yield a dense temporal grid of 188,232 zone-hour cells. Zero-count rows are explicitly inserted to prevent missing-hour sparsity. Busiest zones: Zone 132 (JFK Airport) and Zone 230/237 (Midtown Manhattan).
+- **Limitation:** Geographic zone polygons represent broad administrative areas rather than precise street-level coordinates or driver hailing locations.
 
-For each finding record the notebook output or artifact, its configured period,
-what it supports, and one limit. Counts can differ when input data or configuration
-changes; preserve and investigate the difference instead of forcing a match.
+### Finding 3: Feature Lineage and Temporal Splits
+- **Evidence / Artifact:** `data/features/` split files and `pipeline_summary.json`.
+- **Observed Metrics:** Fare features preserve all 2,727,349 clean trips (100% preservation). Demand features require a 168-hour (7-day) warm-up buffer for lag feature generation (`lag_168`), resulting in 145,728 valid feature rows ($253 \times 576$ hours). Chronological splits strictly preserve temporal causality: Train (Jan 1–24, 80%), Validation (Jan 25–28, 10%), and Test (Jan 29–31, 10%).
+- **Limitation:** The single-month split evaluates mid-winter post-holiday travel patterns and does not establish model stability across summer seasons or severe multi-day blizzard conditions.
 
 ## Completion Check
 

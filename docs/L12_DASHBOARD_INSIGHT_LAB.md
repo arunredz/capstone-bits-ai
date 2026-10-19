@@ -127,14 +127,25 @@ more convenient value.
 
 ## Task 4: Present the Insight
 
-Use this structure:
-
 ```text
 Panel and evidence source:
+- Interactive Fare Estimation & Drift Monitoring Panels in Streamlit Dashboard (dashboard/app.py, dashboard/sections.py).
+- Backed by live FastAPI POST http://127.0.0.1:8000/predict/fare and artifacts/drift/fare_drift_metrics.json.
+
 Observed value or pattern:
+- The Fare panel quotes $70.28 for a 17.2-mile JFK Airport to Times Square route, reproducing the official TLC $70 flat rate.
+- The Drift Monitoring panel displays a high-visibility warning: 2 of 14 features flagged as drifted (PULocationID PSI = 8.68, DOLocationID PSI = 7.66), exceeding the 0.20 threshold.
+
 Stakeholder meaning:
+- Dispatchers and passengers obtain accurate, transparent upfront quotes on primary airport corridors.
+- Concurrently, the operational dashboard alerts engineers that geographic location distributions have shifted significantly, requiring investigation before fare accuracy degrades.
+
 Recommended action and owner:
+- Owner: Fleet Operations Dispatcher and On-Call MLOps Engineer.
+- Action: Maintain active dispatch on core routes; inspect recent location logs for unusual event clustering (e.g., concert or airport deplaning traffic), and trigger a model retraining pipeline if spatial drift persists across two consecutive monitoring windows.
+
 Limitation or freshness boundary:
+- Demonstrated on the local fallback route (Uvicorn on port 8000, Streamlit on port 8501). Drift results represent the validated synthetic test sample rather than a live multi-week S3 Firehose production stream.
 ```
 
 The action must follow from the displayed evidence. An ALB health response

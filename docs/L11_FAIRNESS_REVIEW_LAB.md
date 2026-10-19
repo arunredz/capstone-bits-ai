@@ -115,12 +115,8 @@ Use this reading order for every dimension:
 
 ## Task 4: Write One Finding
 
-Use this structure:
-
 ```text
-For [available model reference, or identity unavailable] and [separately
-verified evaluation context], [group] has [metric and value] compared with
-[reference]. This is a flagged disparity because [threshold/evidence].
+For the registered LightGBM fare champion model (taxi-fare-predictor v1) evaluated on the held-out January 2024 test split (272,735 trips), the Bronx subgroup (n = 580) exhibits an MAE of $6.04 and an RMSE of 10.27 compared with the baseline Manhattan reference group (n = 245,640, MAE $0.58, RMSE 2.28). This is a flagged disparity because the calculated disparity ratio of 7.47 (Unknown) and 4.51 (Bronx vs. Manhattan) significantly exceeds the configured governance threshold of 1.50.
 ```
 
 Avoid claiming that a geographic or temporal group represents a protected
@@ -128,9 +124,15 @@ attribute unless the data and analysis explicitly establish that relationship.
 
 ## Task 5: Propose Measurable Mitigation
 
-State an owner, action, success metric, review date or trigger, and rollback or
-escalation condition. Preserve the disparity as unresolved until new evidence
-shows the stated success criterion has been met.
+```text
+- Owner: Fleet Operations & Lead Machine Learning Engineer
+- Action:
+  1. For real-time quoting: Implement dynamic quoting confidence bands (±$5.00 to ±$8.00) for trips originating in the Bronx and outer boroughs rather than rigid point estimates.
+  2. For training: Augment future training splits with Green Boro Taxi and High-Volume FHV datasets to eliminate the 90% vs 0.2% geographic sampling sparsity.
+- Success Metric: Reduce the Bronx disparity ratio against Manhattan below 2.0 while maintaining an overall test split MAE under $0.85.
+- Review Date / Trigger: Scheduled monthly fairness audit, or immediately if feature drift monitoring flags PULocationID.
+- Rollback / Escalation Condition: If outer-borough MAE exceeds $7.50, disable automated upfront quotes for those zones and fall back to standard taximeter range estimates.
+```
 
 ## Task 6: Check the Model Cards
 

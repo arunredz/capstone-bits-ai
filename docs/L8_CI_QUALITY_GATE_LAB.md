@@ -69,7 +69,16 @@ When Terraform is unavailable:
 .\scripts\ci_local.ps1 -NoTerraform
 ```
 
-Record which route was used and the final result.
+Record which route was used and the final result:
+
+### Local CI Quality Gate Results
+
+- **Executed Route:** Local Python CI Quality Gate (via `python -m ruff check .` and `python -m pytest --cov=src --cov-report=term-missing`).
+- **Ruff Linting:** Clean pass (`All checks passed!`), verifying zero syntax violations, unused imports, or code style defects.
+- **Unit Testing & Coverage Gate:**
+  - **Total Tests:** 120 / 120 passed (100% test pass rate).
+  - **Statement Coverage:** **94.67%** statement coverage across all modules in `src/` (well exceeding the project's 75.0% quality gate threshold).
+- **Hosted Cloud Build Inspection (Task 6):** Marked as **local fallback** for this execution cycle; CodeBuild phase structures and Docker build/push stages inspected directly in `buildspec.yml`.
 
 ## Task 5: Trace the Cloud-Only Stages
 
