@@ -96,6 +96,8 @@ python -m scripts.batch_forecast
 
 ```
 
+> **💡 WSL 2 Note:** Interactive Swagger UI is available at `http://127.0.0.1:8000/docs`. If Windows port forwarding hiccups, access it via your WSL host IP: `http://<wsl-ip>:8000/docs` (find your IP with `hostname -I`).
+
 ### 7. Feature Drift Monitoring
 
 ```bash
