@@ -111,7 +111,7 @@ python -m scripts.monitoring.demo_drift_report --problem fare --mode drift
 pip install -r requirements-dashboard.txt
 
 # Start the Streamlit UI (opens on http://localhost:8501)
-streamlit run dashboard/app.py
+PYTHONPATH=. streamlit run dashboard/app.py
 
 ```
 
