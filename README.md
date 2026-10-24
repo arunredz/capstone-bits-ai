@@ -21,7 +21,7 @@ To clone and reproduce the entire machine learning pipeline end-to-end in a fres
 
 ```bash
 # Clone repository and enter directory
-git clone [https://github.com/arunredz/capstone-bits-ai.git](https://github.com/arunredz/capstone-bits-ai.git)
+git clone https://github.com/arunredz/capstone-bits-ai.git
 cd capstone-bits-ai
 
 # Create and activate Python 3.11 virtual environment
@@ -81,7 +81,7 @@ python -m scripts.responsible.run_analysis
 uvicorn src.serving.api:app --host 0.0.0.0 --port 8000 &
 
 # Quick smoke test for real-time fare inference (returns HTTP 200 with ~$70 quote)
-curl -X POST "[http://127.0.0.1:8000/predict/fare](http://127.0.0.1:8000/predict/fare)" \
+curl -X POST "http://127.0.0.1:8000/predict/fare" \
      -H "Content-Type: application/json" \
      -d '{
        "pickup_datetime": "2024-01-15T18:30:00",
