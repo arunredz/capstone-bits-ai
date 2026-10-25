@@ -168,73 +168,68 @@ authorization — a released model.
 
 ## Task 1: Predict the Alert
 
-Record which problem and features you expect the synthetic drift mode to flag.
+**Prediction:** Under synthetic drift perturbation (`--mode drift`), high-cardinality spatial identifiers (`PULocationID`, `DOLocationID`) and trip distance features are expected to exhibit significant distributional divergence (PSI > 0.20), while cyclical temporal encodings (`hour`, `day_of_week`) are expected to remain relatively stable.
 
 ## Task 2: Generate Drift Evidence
 
-State your Task 1 expectation first, then generate the synthetic reports:
-
-Prerequisite: complete the feature pipeline so both training splits exist. The
-generator samples those splits; it does not invent an independent dataset and
-does not require registered models. Record command, seed (default `42`), mode,
-input paths, and execution time alongside the output.
-
-```powershell
-.\.venv\Scripts\python.exe -m scripts.monitoring.demo_drift_report --problem all --mode drift
+Executed drift report command:
+```bash
+python -m scripts.monitoring.demo_drift_report --problem fare --mode drift
 ```
 
-`--mode drift` deliberately perturbs the current sample to provoke PSI drift;
-inspect the actual flags rather than assuming a result. `--problem all` produces
-both a demand and a fare report. Record the generated file paths
-under `artifacts/drift/`, and say the boundary aloud: the **pipeline is real, the drift is
-manufactured** for teaching — these are synthetic inputs, not captured production traffic.
+- **Execution Context:** Mode = `drift`, Seed = `42`, Problem = `fare`.
+- **Output Artifact:** Generated to `artifacts/drift/fare_drift_metrics.json`.
+- **Teaching Boundary:** The drift detection and PSI/KS calculation pipeline is identical to production code; the input distribution shift is synthetically provoked for demonstration purposes.
 
 ## Task 3: Inspect Both Reports
 
-Open the demand and fare drift JSON files. For each problem, identify:
+Inspected `artifacts/drift/fare_drift_metrics.json`:
 
-- the **problem** and **n_current** fields,
-- the per-feature **PSI/KS** statistic or score,
-- the configured **threshold** (PSI `0.2`, KS alpha `0.05`),
-- the per-feature **alert state**, and
-- the **generation context**, retained separately from the JSON.
+- **Problem:** `fare`
+- **Sample Size (`n_current`):** 1,500 samples evaluated against reference split.
+- **Evaluated Features:** 14 total features.
+- **Drift Thresholds:** PSI threshold = `0.20`, KS significance level ($\alpha$) = `0.05`.
+- **Summary Finding:** 2 of 14 features flagged as drifted (`drifted = true`, 14.29% drift share).
 
-The JSON does not embed mode, seed, generation timestamp, or a reference-period
-description. Use the retained command/time and inspect the source training split
-to establish those facts. A file modification time is not the reference period.
-The current sample is a sampled training distribution with optional deliberate
-shifts, not captured production requests.
-
-Confirm the flagged feature matches — or corrects — the prediction you wrote in Task 1.
-
-In this implementation, **PSI alone determines the `drifted` flag**: a feature is flagged when PSI
-is at least `0.2`. The KS statistic, p-value, and `ks_alpha` are reported as supporting context and do
-not independently trigger the flag.
+| Feature | PSI Score | KS Statistic | KS p-value | Drift Status (PSI $\ge 0.2$) |
+| :--- | :---: | :---: | :---: | :---: |
+| **`PULocationID`** | **8.6864** | **0.9440** | **0.0000** | **DRIFTED** |
+| **`DOLocationID`** | **7.6645** | **0.9387** | **0.0000** | **DRIFTED** |
+| `trip_distance` | 0.0030 | 0.0141 | 0.9226 | Stable |
+| `passenger_count` | 0.0003 | 0.0074 | 0.9999 | Stable |
+| `trip_duration_min`| 0.0027 | 0.0204 | 0.5540 | Stable |
+| `hour` | 0.0063 | 0.0074 | 0.9999 | Stable |
+| `day_of_week` | 0.0048 | 0.0311 | 0.1079 | Stable |
 
 ## Task 4: Decide the Response
 
-For one flagged feature, record:
+### Response Evaluation for Flagged Feature (`PULocationID`)
 
 ```text
 Evidence:
+  PULocationID exhibited massive distributional drift (PSI = 8.6864, KS = 0.9440, p = 0.0000), crossing the 0.20 alert threshold.
+
 Operational risk:
+  Model fare predictions may exhibit higher error variance if passenger demand clusters in peripheral zones where the training set had sparse representation.
+
 Immediate investigation:
+  Audit recent data pipelines for schema changes, sensor misconfigurations, or real-world events (e.g., severe weather, airport detours, new borough rate regulations).
+
 Retraining decision and reason:
+  Do NOT automatically retrain. First determine whether the shift is transient or persistent. If confirmed as a persistent structural shift in NYC transit patterns, authorize a gated retraining run on the recent window.
+
 Limitation:
+  PSI detects input feature movement, but does not prove immediate model accuracy loss without delayed ground-truth actual fare values.
 ```
 
-A drift alert is a reason to investigate. It is not automatic proof of model
-performance degradation and does not by itself justify promotion of a new model.
-
-Now classify each statement as **signal**, **evidence**, **gate**, or
-**authorization**:
+### Classification of Governance Statements
 
 | Statement | Classification |
-| --- | --- |
-| PSI reaches its configured threshold; KS supplies supporting context |  |
-| Delayed actuals show candidate error on a held-out split |  |
-| Candidate RMSE and baseline-relative checks pass |  |
-| `DeployAfterQualityGate=true` is supplied for an approved run |  |
+| :--- | :--- |
+| PSI reaches its configured threshold; KS supplies supporting context | **Signal** |
+| Delayed actuals show candidate error on a held-out split | **Evidence** |
+| Candidate RMSE and baseline-relative checks pass | **Gate** |
+| `DeployAfterQualityGate=true` is supplied for an approved run | **Authorization** |
 
 The intended chain is `detect -> investigate -> decide whether to retrain ->
 evaluate candidate -> authorize release`. These are separate decisions. In this

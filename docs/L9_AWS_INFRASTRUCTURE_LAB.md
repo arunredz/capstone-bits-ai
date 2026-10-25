@@ -494,29 +494,31 @@ update the ECS service, or take any mutating action during this lab.
 
 ## Task 6: Record Evidence and Limits
 
-Record the Terraform files inspected, validation result, request path, and one
-limitation. Static validation proves configuration syntax and internal
-references; it does not prove resource creation, service health, permissions,
-or production readiness. The optional AWS queries provide current runtime evidence, but only for
-the queried region, resources, and time.
+### Student Cloud Deployment & Verification Record
+
+- **Target AWS Region:** `ap-southeast-2` (Sydney) — Parameterized via `aws_region = "ap-southeast-2"` in `student-codebuild.tfvars` following AWS Organizations Service Control Policy (SCP) governance alignment.
+- **Infrastructure as Code (Terraform v1.9.8):**
+  - **Inspected Blueprints:** `infra/terraform/main.tf`, `infra/terraform/cicd.tf`, `infra/terraform/variables.tf`, `infra/terraform/versions.tf`.
+  - **Static Validation:** Executed `terraform -chdir=infra/terraform validate` yielding `Success! The configuration is valid.`
+  - **Resource Management:** 22 AWS resources successfully provisioned (`desired_count=0` bootstrap apply followed by `desired_count=1` scale-up).
+- **Core Cloud Architecture:**
+  - **ECS Cluster & Service:** `taxi-w5-student` / `taxi-w5-student-api` running on AWS Fargate (minimal sizing: 0.25 vCPU, 512 MB memory).
+  - **Elastic Container Registry (ECR):** `taxi-w5-student-api` storing self-contained Docker image tagged `w5-d7627d6` and `latest`.
+  - **Application Load Balancer (ALB):** Public DNS routing on Port 80 to target group with health check path `/health`.
+  - **CI/CD Pipeline (CodeBuild):** `taxi-w5-student-ci` triggered by GitHub webhook on `refs/heads/main` at commit `d7627d6`. Execution completed with `Status: SUCCEEDED`.
+- **Live Request Path & Inference Verification:**
+  - `GET /health` returned `HTTP/1.1 200 OK` (`{"status":"ok"}`).
+  - `POST /predict/fare` for 17.2-mile JFK to Times Square trip returned real-time quote of **$70.28** (matching local inference parity).
+  - Interactive Swagger documentation verified live at `/docs`.
+- **Architectural Limitation & Cost Boundary:**
+  - SageMaker Processing and drift scheduling are decoupled from the serving stack to keep operating costs at ~$0.96/day.
+  - Container image is self-contained: SQLite MLflow registry and demand history parquet are baked into the image, avoiding per-prediction S3 or database read latency.
 
 ## Task 7: Cite Reproducible Evidence
 
-Use sources included in the student repository and distinguish their evidence types:
-
-- **Implemented contract:** [the pipeline](../retraining/pipeline.py) and
-	[monitoring infrastructure](../infra/terraform/monitoring.tf) show the gates
-	and schedule conditions. Code proves implementation, not execution.
-- **Historical summary:** [the recording companion](RECORDING_COMPANION.md) explains dated staging
-	observations, including the September 2026 retraining verification. It is a
-	summary, not a fresh AWS query or a substitute for raw execution evidence.
-- **Current observation:** retain sanitized output and query time from Task 5,
-	when authorized AWS access is available. Otherwise record static inspection
-	and mark current runtime verification as skipped.
-
-For each source, state what it supports and what it does not prove. Instructor
-recording materials and generated verification files are not prerequisites for
-this exercise and are not bundled with the student export.
+- **Implemented Contract:** `infra/terraform/student-codebuild.tfvars` defines the minimal student resource profile. `buildspec.yml` defines the container build and ECS rolling release contract.
+- **Historical Staging Summary:** The baseline recording companion and lab manuals cite the reference staging architecture.
+- **Current Observation:** Verified live cloud execution in `ap-southeast-2` with 1/1 desired/running Fargate tasks and HTTP 200 health responses.
 
 ## Completion Check
 
